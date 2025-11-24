@@ -6,12 +6,12 @@
       "DownstreamPathTemplate": "/catalog-service/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "localhost", "Port": 5002 }
+        { "Host": "catalogservice.api", "Port": 8080 }
       ],
       "Key": "catalog-catchall"
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "http://localhost:7088"
+    "BaseUrl": "http://localhost:8080"
   }
 }
