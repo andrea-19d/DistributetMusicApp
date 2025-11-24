@@ -1,0 +1,42 @@
+﻿services:
+  apigateway.api:
+    container_name: apigateway.api
+    image: apigateway.api
+    build:
+      context: .
+      dockerfile: ApiGateway.Api/Dockerfile
+
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:8080;http://+:8081"
+      MongoDbSettings__ConnectionString: "mongodb://mongo:27017/GatewayDb"
+      MongoDbSettings__DatabaseName: "GatewayDb"
+
+    depends_on:
+      - mongo
+
+    networks:
+      - backend
+        
+
+  mongo:
+    image: mongo:8
+    container_name: gateway_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"       
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  mongo_data:
