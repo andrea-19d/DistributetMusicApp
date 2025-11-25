@@ -9,14 +9,14 @@ public class MongoWriteRepository<T> : IMongoWriteRepository<T> where T : MongoD
 {
     private readonly IMongoCollection<T> _collection;
 
-    public MongoWriteRepository(IMongoDbSettings settings)
+    public MongoWriteRepository(IMongoDbSettings settings, IMongoClient client)
     {
-        var client = new MongoClient(settings.ConnectionString);
         var db = client.GetDatabase(settings.DatabaseName);
-
         var tableName = typeof(T).Name.ToLower();
 
-        _collection = db.GetCollection<T>(tableName);
+        _collection = db
+            .WithReadPreference(ReadPreference.Primary)
+            .GetCollection<T>(tableName);
     }
 
     public async Task<T> InsertAsync(T entity)

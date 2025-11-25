@@ -4,13 +4,16 @@ namespace ApiGateway.Api.Extensions;
 
 public static class PresentationExtensions
 {
-    public static IServiceCollection AddPresentation(this IServiceCollection services,
+    public static IServiceCollection AddPresentation(
+        this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddControllers();
-        services.AddDataProtection();
-        services.AddSwagger();
+        services
+            .AddControllers(o => o.RespectBrowserAcceptHeader = true)
+            .AddXmlSerializerFormatters()
+            .AddJsonOptions(o => o.JsonSerializerOptions.PropertyNamingPolicy = null);
 
+        services.AddSwagger();
         return services;
     }
 

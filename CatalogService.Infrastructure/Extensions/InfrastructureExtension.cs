@@ -5,6 +5,7 @@ using CatalogService.Infrastructure.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 
 namespace CatalogService.Infrastructure.Extensions;
 
@@ -13,6 +14,15 @@ public static class InfrastructureExtension
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext(configuration);
+        
+        services.AddSingleton<IMongoClient>(sp =>
+        {
+            var settings = sp.GetRequiredService<IMongoDbSettings>();
+
+            var mongoSettings = MongoClientSettings.FromConnectionString(settings.ConnectionString);
+            return new MongoClient(mongoSettings);
+        });
+        
         return services;
     }
     

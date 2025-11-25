@@ -1,0 +1,292 @@
+﻿apiVersion: v1
+kind: Namespace
+metadata:
+  name: distributetmusicapp
+---
+# ================== Redis ==================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: distributetmusicapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: distributetmusicapp
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+      protocol: TCP
+  type: ClusterIP
+---
+# ============ MongoDB Replica Set ============
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+  namespace: distributetmusicapp
+spec:
+  clusterIP: None
+  selector:
+    app: mongo
+  ports:
+    - port: 27017
+      targetPort: 27017
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo
+  namespace: distributetmusicapp
+spec:
+  serviceName: "mongo"
+  replicas: 3         
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:8
+          command:
+            - "mongod"
+            - "--replSet"
+            - "rs0"
+            - "--bind_ip_all"
+            - "--port"
+            - "27017"
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: mongo-data
+              mountPath: /data/db
+  volumeClaimTemplates:
+    - metadata:
+        name: mongo-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 5Gi
+        # optional: setezi storageClassName daca e nevoie
+        # storageClassName: standard
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mongo-rs-init
+  namespace: distributetmusicapp
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mongo-rs-init
+          image: mongo:8
+          command:
+            - "bash"
+            - "-c"
+            - |
+              echo "Waiting for MongoDB pods..."
+              sleep 20
+              mongosh --host mongo-0.mongo:27017 <<EOF
+              try {
+                rs.status()
+              } catch (e) {
+                rs.initiate({
+                  _id: "rs0",
+                  members: [
+                    { _id: 0, host: "mongo-0.mongo:27017" },
+                    { _id: 1, host: "mongo-1.mongo:27017" },
+                    { _id: 2, host: "mongo-2.mongo:27017" }
+                  ]
+                })
+              }
+              EOF
+---
+# ============ CatalogService (inlocuieste catalogservice.api + catalogservice2.api) ============
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalogservice
+  namespace: distributetmusicapp
+spec:
+  replicas: 2  
+  selector:
+    matchLabels:
+      app: catalogservice
+  template:
+    metadata:
+      labels:
+        app: catalogservice
+    spec:
+      containers:
+        - name: catalogservice
+          image: catalogservice.api    
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Development"
+            - name: ASPNETCORE_URLS
+              value: "http://+:8080"
+            - name: MongoDbSettings__ConnectionString
+              value: "mongodb://mongo-0.mongo:27017,mongo-1.mongo:27017,mongo-2.mongo:27017/GatewayDb?replicaSet=rs0"
+            - name: MongoDbSettings__DatabaseName
+              value: "GatewayDb"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalogservice
+  namespace: distributetmusicapp
+spec:
+  selector:
+    app: catalogservice
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP
+---
+# ================== ApiGateway (Ocelot) ==================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apigateway
+  namespace: distributetmusicapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apigateway
+  template:
+    metadata:
+      labels:
+        app: apigateway
+    spec:
+      containers:
+        - name: apigateway
+          image: apigateway.api
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Development"
+            - name: ASPNETCORE_URLS
+              value: "http://+:8080"
+            - name: Redis__Host
+              value: "redis"
+            - name: Redis__Port
+              value: "6379"
+            - name: Redis__Db
+              value: "0"
+          volumeMounts:
+            - name: ocelot-config
+              mountPath: /app/ocelot.json
+              subPath: ocelot.json
+      volumes:
+        - name: ocelot-config
+          configMap:
+            name: ocelot-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apigateway
+  namespace: distributetmusicapp
+spec:
+  selector:
+    app: apigateway
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+  type: LoadBalancer 
+---
+# ConfigMap pentru ocelot.json (actualizat pentru Kubernetes)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ocelot-config
+  namespace: distributetmusicapp
+data:
+  ocelot.json: |
+    {
+      "Routes": [
+        {
+          "UpstreamPathTemplate": "/{everything}",
+          "UpstreamHttpMethod": [ "GET" ],
+          "DownstreamPathTemplate": "/{everything}",
+          "DownstreamScheme": "http",
+          "DownstreamHostAndPorts": [
+            {
+              "Host": "catalogservice",
+              "Port": 8080
+            }
+          ],
+          "LoadBalancerOptions": { "Type": "RoundRobin" },
+          "FileCacheOptions": {
+            "TtlSeconds": 15,
+            "Region": "catalog-get"
+          },
+          "RateLimitOptions": {
+            "EnableRateLimiting": true,
+            "Period": "10s",
+            "Limit": 3
+          },
+          "Key": "catalog-get-cached"
+        },
+        {
+          "UpstreamPathTemplate": "/{everything}",
+          "UpstreamHttpMethod": [ "POST", "PUT", "DELETE", "PATCH" ],
+          "DownstreamPathTemplate": "/{everything}",
+          "DownstreamScheme": "http",
+          "DownstreamHostAndPorts": [
+            {
+              "Host": "catalogservice",
+              "Port": 8080
+            }
+          ],
+          "LoadBalancerOptions": { "Type": "RoundRobin" },
+          "Key": "catalog-write-no-cache"
+        }
+      ],
+      "GlobalConfiguration": {
+        "BaseUrl": "http://apigateway:8080",
+        "RateLimitOptions": {
+          "ClientIdHeader": "MyRateLimiting",
+          "DisableRateLimitHeaders": false,
+          "HttpStatusCode": 418,
+          "QuotaExceededMessage": "Customize Tips!",
+          "RateLimitCounterPrefix": "ocelot"
+        }
+      }
+    }

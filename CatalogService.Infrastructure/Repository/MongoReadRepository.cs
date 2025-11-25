@@ -10,14 +10,14 @@ public class MongoReadRepository<T> : IMongoReadRepository<T> where T : MongoDoc
 {
     private readonly IMongoCollection<T> _collection;
 
-    public MongoReadRepository(IMongoDbSettings settings)
+    public MongoReadRepository(IMongoDbSettings settings, IMongoClient client)
     {
-        var client = new MongoClient(settings.ConnectionString);
         var db = client.GetDatabase(settings.DatabaseName);
-
         var tableName = typeof(T).Name.ToLower();
 
-        _collection = db.GetCollection<T>(tableName);
+        _collection = db
+            .WithReadPreference(ReadPreference.SecondaryPreferred)
+            .GetCollection<T>(tableName);
     }
 
     public async Task<List<T>> GetAllAsync()
