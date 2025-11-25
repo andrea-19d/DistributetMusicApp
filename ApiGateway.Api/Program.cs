@@ -1,16 +1,19 @@
 using ApiGateway.Api.Extensions;
 using ApiGateway.Infrastructure.Extensions;
-using MongoDB.Bson;
+using Ocelot.Cache.CacheManager;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
+using Ocelot.Provider.Polly;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddPresentation(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddTransient<CacheLoggingHandler>();
+
 builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
 
-builder.Services.AddOcelot(builder.Configuration);
+builder.Services.AddOcelotWithRedisCache(builder.Configuration);
 
 var app = builder.Build();
 

@@ -1,0 +1,8 @@
+#! 0-distributetmusicapp-namespace.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: distributetmusicapp
+    labels:
+        com.docker.compose.project: distributetmusicapp

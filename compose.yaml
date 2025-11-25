@@ -11,11 +11,13 @@
     environment:
       ASPNETCORE_ENVIRONMENT: "Development"
       ASPNETCORE_URLS: "http://+:8080;http://+:8081"
-      MongoDbSettings__ConnectionString: "mongodb://mongo:27017/GatewayDb"
-      MongoDbSettings__DatabaseName: "GatewayDb"
+      Redis__Host: "redis"
+      Redis__Port: "6379"
+      Redis__Db: "0"
     depends_on:
-      - mongo
+      - redis
       - catalogservice.api
+      - catalogservice2.api
     networks:
       - backend
 
@@ -36,6 +38,24 @@
       - mongo
     networks:
       - backend
+    
+  catalogservice2.api:
+    container_name: catalogservice2.api
+    image: catalogservice.api
+    build:
+      context: .
+      dockerfile: CatalogServicec.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:8080"
+      MongoDbSettings__ConnectionString: "mongodb://mongo:27017/GatewayDb"
+      MongoDbSettings__DatabaseName: "GatewayDb"
+    ports:
+      - "5003:8080"  
+    depends_on:
+      - mongo
+    networks:
+      - backend
 
   mongo:
     image: mongo:8
@@ -47,6 +67,15 @@
       - mongo_data:/data/db
     networks:
       - backend
+  
+  redis:
+    image: redis:7-alpine
+    container_name: gateway_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+    restart: unless-stopped
 
 networks:
   backend:

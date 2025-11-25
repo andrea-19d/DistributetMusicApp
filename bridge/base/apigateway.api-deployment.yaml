@@ -1,0 +1,45 @@
+#! apigateway.api-deployment.yaml
+# Generated code, do not edit
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: apigateway-api
+    namespace: distributetmusicapp
+    labels:
+        com.docker.compose.project: distributetmusicapp
+        com.docker.compose.service: apigateway.api
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            com.docker.compose.project: distributetmusicapp
+            com.docker.compose.service: apigateway.api
+    strategy:
+        type: Recreate
+    template:
+        metadata:
+            labels:
+                com.docker.compose.project: distributetmusicapp
+                com.docker.compose.service: apigateway.api
+                com.docker.compose.network.backend: "true"
+        spec:
+            containers:
+                - name: apigateway-api
+                  image: apigateway.api
+                  imagePullPolicy: IfNotPresent
+                  env:
+                    - name: ASPNETCORE_ENVIRONMENT
+                      value: "Development"
+                    - name: ASPNETCORE_URLS
+                      value: "http://+:8080;http://+:8081"
+                    - name: Redis__Db
+                      value: "0"
+                    - name: Redis__Host
+                      value: "redis"
+                    - name: Redis__Port
+                      value: "6379"
+                  ports:
+                    - name: apigateway-8080
+                      containerPort: 8080
+                    - name: apigateway-8081
+                      containerPort: 8081

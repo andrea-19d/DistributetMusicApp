@@ -1,0 +1,21 @@
+#! catalogservice.api-service.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: Service
+metadata:
+    name: catalogservice-api-published
+    namespace: distributetmusicapp
+    labels:
+        com.docker.compose.project: distributetmusicapp
+        com.docker.compose.service: catalogservice.api
+spec:
+    selector:
+        com.docker.compose.project: distributetmusicapp
+        com.docker.compose.service: catalogservice.api
+    ports:
+        - name: catalogser-5002
+          port: 5002
+          protocol: TCP
+          targetPort: catalogser-8080
+
+# check if there is at least one published port

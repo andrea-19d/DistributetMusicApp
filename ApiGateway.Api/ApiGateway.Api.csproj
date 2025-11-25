@@ -9,11 +9,14 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="CacheManager.StackExchange.Redis" Version="3.0.0-beta-20251110.1" />
         <PackageReference Include="FluentValidation" Version="12.1.0" />
         <PackageReference Include="MediatR" Version="14.0.0-beta-1" />
         <PackageReference Include="MongoDB.Bson" Version="3.5.0" />
         <PackageReference Include="MongoDB.Driver" Version="3.5.0" />
         <PackageReference Include="Ocelot" Version="24.0.1" />
+        <PackageReference Include="Ocelot.Cache.CacheManager" Version="24.0.0" />
+        <PackageReference Include="Ocelot.Provider.Polly" Version="24.0.0" />
         <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="10.0.1" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.0.1" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.0.1" />

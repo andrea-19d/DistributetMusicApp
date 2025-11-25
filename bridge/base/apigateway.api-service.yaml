@@ -1,0 +1,27 @@
+# check if there is at least one published port
+
+#! apigateway.api-service.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: Service
+metadata:
+    name: apigateway-api-published
+    namespace: distributetmusicapp
+    labels:
+        com.docker.compose.project: distributetmusicapp
+        com.docker.compose.service: apigateway.api
+spec:
+    selector:
+        com.docker.compose.project: distributetmusicapp
+        com.docker.compose.service: apigateway.api
+    ports:
+        - name: apigateway-8080
+          port: 8080
+          protocol: TCP
+          targetPort: apigateway-8080
+        - name: apigateway-8081
+          port: 8081
+          protocol: TCP
+          targetPort: apigateway-8081
+
+# check if there is at least one published port

@@ -1,17 +1,47 @@
 ﻿{
   "Routes": [
     {
-      "UpstreamPathTemplate": "/catalog-service/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH" ],
-      "DownstreamPathTemplate": "/catalog-service/{everything}",
+      "UpstreamPathTemplate": "/{everything}",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "catalogservice.api", "Port": 8080 }
+        { "Host": "catalogservice.api", "Port": 8080 },
+        { "Host": "catalogservice2.api", "Port": 8080 }
       ],
-      "Key": "catalog-catchall"
+      "LoadBalancerOptions": { "Type": "RoundRobin" },
+      "FileCacheOptions": {
+        "TtlSeconds": 15,
+        "Region": "catalog-get"
+      },
+      "RateLimitOptions": {
+        "EnableRateLimiting": true,
+        "Period": "10s",
+        "Limit": 3
+      },
+      "Key": "catalog-get-cached"
+    },
+    {
+      "UpstreamPathTemplate": "/{everything}",
+      "UpstreamHttpMethod": [ "POST", "PUT", "DELETE", "PATCH" ],
+      "DownstreamPathTemplate": "/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "catalogservice.api", "Port": 8080 },
+        { "Host": "catalogservice2.api", "Port": 8080 }
+      ],
+      "LoadBalancerOptions": { "Type": "RoundRobin" },
+      "Key": "catalog-write-no-cache"
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "http://localhost:8080"
+    "BaseUrl": "http://localhost:8080",
+    "RateLimitOptions": {
+      "ClientIdHeader": "MyRateLimiting",
+      "DisableRateLimitHeaders": false,
+      "HttpStatusCode": 418,
+      "QuotaExceededMessage": "Customize Tips!",
+      "RateLimitCounterPrefix": "ocelot"
+    }
   }
 }

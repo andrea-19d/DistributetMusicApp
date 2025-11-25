@@ -1,0 +1,23 @@
+#! kustomization.yaml
+# Generated code, do not edit
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+    - 0-distributetmusicapp-namespace.yaml
+    - apigateway.api-deployment.yaml
+    - apigateway.api-expose.yaml
+    - apigateway.api-service.yaml
+    - backend-network-policy.yaml
+    - catalogservice.api-deployment.yaml
+    - catalogservice.api-expose.yaml
+    - catalogservice.api-service.yaml
+    - catalogservice2.api-deployment.yaml
+    - catalogservice2.api-expose.yaml
+    - catalogservice2.api-service.yaml
+    - mongo-deployment.yaml
+    - mongo-expose.yaml
+    - mongo-mongo_data-persistentVolumeClaim.yaml
+    - mongo-service.yaml
+    - redis-deployment.yaml
+    - redis-expose.yaml
+    - redis-service.yaml

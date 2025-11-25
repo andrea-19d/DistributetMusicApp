@@ -1,0 +1,43 @@
+#! catalogservice2.api-deployment.yaml
+# Generated code, do not edit
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: catalogservice2-api
+    namespace: distributetmusicapp
+    labels:
+        com.docker.compose.project: distributetmusicapp
+        com.docker.compose.service: catalogservice2.api
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            com.docker.compose.project: distributetmusicapp
+            com.docker.compose.service: catalogservice2.api
+    strategy:
+        type: Recreate
+    template:
+        metadata:
+            labels:
+                com.docker.compose.project: distributetmusicapp
+                com.docker.compose.service: catalogservice2.api
+                com.docker.compose.network.backend: "true"
+        spec:
+            containers:
+                - name: catalogservice2-api
+                  image: catalogservice.api
+                  imagePullPolicy: IfNotPresent
+                  env:
+                    - name: ASPNETCORE_ENVIRONMENT
+                      value: "Development"
+                    - name: ASPNETCORE_URLS
+                      value: "http://+:8080"
+                    - name: MongoDbSettings__ConnectionString
+                      value: "mongodb://mongo:27017/GatewayDb"
+                    - name: MongoDbSettings__DatabaseName
+                      value: "GatewayDb"
+                  ports:
+                    - name: catalogser-8080
+                      containerPort: 8080
+                    - name: catalogser-8081
+                      containerPort: 8081

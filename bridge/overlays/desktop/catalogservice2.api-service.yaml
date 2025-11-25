@@ -1,0 +1,11 @@
+#! catalogservice2.api-service.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: Service
+metadata:
+    name: catalogservice2-api-published
+    namespace: distributetmusicapp
+spec:
+    type: LoadBalancer
+
+# check if there is at least one published port
